@@ -127,7 +127,14 @@ export const translations = {
       'Cloud Services': '☁️ 云服务',
       'Non-China': '🌐 非中国',
       'Manual Switch': '🖐️ 手动切换',
-      'GLOBAL': 'GLOBAL'
+      'GLOBAL': 'GLOBAL',
+      'Game Download': '🎮 游戏下载',
+      'Game Platfrom Non China': '🎮 非中国游戏平台',
+      'Communication': '📱 即时通讯',
+      'Social Media': '📱 社交媒体',
+      'China Entertainment': '🎬 国内流媒体',
+      'Entertainment': '🎬 流媒体',
+      'Ecommerce': '🛒 电商平台'
     },
     generalSettings: '通用设置',
     groupByCountry: '按国家分组',

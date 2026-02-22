@@ -6,6 +6,85 @@
 export const CUSTOM_RULES = [];
 
 export const UNIFIED_RULES = [
+  {
+    name: 'Ad Block',
+    site_rules: ['category-ads-all'],
+    ip_rules: []
+  },
+  {
+    name: 'Private',
+    site_rules: ['private'],
+    ip_rules: ['private']
+  },
+  {
+    name: 'Game Download',
+    site_rules: ['category-game-platforms-download'],
+    ip_rules: []
+  },
+  {
+    name: 'Game Platfrom Non China',
+    site_rules: ['category-games-!cn'],
+    ip_rules: []
+  },
+  {
+    name: 'AI Services',
+    site_rules: ['category-ai-!cn'],
+    ip_rules: []
+  },
+  {
+    name: 'Communication',
+    site_rules: ['category-communication'],
+    ip_rules: ['telegram']
+  },
+  {
+    name: 'Social Media',
+    site_rules: ['category-social-media-!cn'],
+    ip_rules: ['facebook', 'twitter']
+  },
+  {
+    name: 'China Entertainment',
+    site_rules: ['category-entertainment-cn'],
+    ip_rules: []
+  },
+  {
+    name: 'Entertainment',
+    site_rules: ['category-entertainment'],
+    ip_rules: ['netflix']
+  },
+  {
+    name: 'Ecommerce',
+    site_rules: ['category-ecommerce'],
+    ip_rules: []
+  },
+  {
+    name: 'Apple',
+    site_rules: ['apple'],
+    ip_rules: []
+  },
+  {
+    name: 'Microsoft',
+    site_rules: ['microsoft'],
+    ip_rules: []
+  },
+  {
+    name: 'Google',
+    site_rules: ['google'],
+    ip_rules: ['google']
+  },
+  {
+    name: 'Non-China',
+    site_rules: ['geolocation-!cn'],
+    ip_rules: []
+  },
+  {
+    name: 'Location:CN',
+    site_rules: ['geolocation-cn', 'cn'],
+    ip_rules: ['cn']
+  }
+];
+
+/* 原规则组
+export const UNIFIED_RULES = [
 	{
 		name: 'Ad Block',
 		site_rules: ['category-ads-all'],
@@ -97,9 +176,10 @@ export const UNIFIED_RULES = [
 		ip_rules: []
 	}
 ];
+*/
 
 // Rule names that should default to DIRECT instead of Node Select
-export const DIRECT_DEFAULT_RULES = new Set(['Private', 'Location:CN']);
+export const DIRECT_DEFAULT_RULES = new Set(['Private', 'Location:CN', 'Game Download', 'China Entertainment', 'Apple']);
 
 export const PREDEFINED_RULE_SETS = {
 	minimal: ['Location:CN', 'Private', 'Non-China'],

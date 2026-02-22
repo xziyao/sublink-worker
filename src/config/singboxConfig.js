@@ -7,9 +7,9 @@ export const SING_BOX_CONFIG = {
 	dns: {
 		servers: [
 			{
-				type: "tcp",
+				type: "https",
 				tag: "dns_proxy",
-				server: "1.1.1.1",
+				server: "dns.cloudflare.com",
 				detour: "🚀 节点选择",
 				domain_resolver: "dns_resolver"
 			},
@@ -54,9 +54,24 @@ export const SING_BOX_CONFIG = {
 				invert: true,
 				action: "predefined",
 				rcode: "REFUSED"
-			}
+			},
+			{
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "rule_set": "geolocation-!cn",
+            "invert": true
+          },
+          {
+            "rule_set": "cn-ip"
+          }
+        ],
+        "server": "dns_proxy",
+        "client_subnet": "119.29.29.29/24"
+      }
 		],
-		final: "dns_direct",
+		final: "dns_proxy",
 		independent_cache: true
 	},
 	ntp: {
@@ -67,7 +82,7 @@ export const SING_BOX_CONFIG = {
 	},
 	inbounds: [
 		{ type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 2080 },
-		{ type: 'tun', tag: 'tun-in', address: '172.19.0.1/30', auto_route: true, strict_route: true, stack: 'mixed', sniff: true }
+		{ type: 'tun', tag: 'tun-in', address: ["172.19.0.1/30", "fdfe:dcba:9876::1/126"], auto_route: true, strict_route: true, stack: 'mixed', sniff: true }
 	],
 	outbounds: [
 		{ type: 'block', tag: 'REJECT' },
@@ -75,15 +90,46 @@ export const SING_BOX_CONFIG = {
 	],
 	route: {
 		default_domain_resolver: "dns_resolver",
-		"rule_set": [
+		"rule_set": [],
+		rules: [
 			{
-				"tag": "geosite-geolocation-!cn",
-				"type": "local",
-				"format": "binary",
-				"path": "geosite-geolocation-!cn.srs"
+				action: "sniff"
+			},
+			{
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
+        "action": "hijack-dns"
+      },
+			{
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 853
+          },
+          {
+            "network": "udp",
+            "port": 443
+          },
+          {
+            "protocol": "stun"
+          }
+        ],
+        "action": "reject"
 			}
-		],
-		rules: []
+		]
 	},
 	experimental: {
 		cache_file: {
