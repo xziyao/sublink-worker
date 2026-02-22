@@ -72,6 +72,8 @@ export const SING_BOX_CONFIG = {
       }
 		],
 		final: "dns_proxy",
+    strategy: "prefer_ipv4",
+    client_subnet: "119.29.29.29/24",
 		independent_cache: true
 	},
 	ntp: {
@@ -81,8 +83,21 @@ export const SING_BOX_CONFIG = {
 		interval: '30m'
 	},
 	inbounds: [
-		{ type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 2080 },
-		{ type: 'tun', tag: 'tun-in', address: ["172.19.0.1/30", "fdfe:dcba:9876::1/126"], auto_route: true, strict_route: true, stack: 'mixed', sniff: true }
+		{
+			type: 'mixed',
+			tag: 'mixed-in',
+			listen: '0.0.0.0',
+			listen_port: 2080
+		},
+		{
+			type: 'tun',
+			tag: 'tun-in',
+			address: ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
+			auto_route: true,
+			strict_route: true,
+			stack: 'mixed',
+			sniff: true
+		}
 	],
 	outbounds: [
 		{ type: 'block', tag: 'REJECT' },
