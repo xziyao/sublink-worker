@@ -6,6 +6,15 @@ import { addProxyWithDedup } from './helpers/proxyHelpers.js';
 import { buildSelectorMembers as buildSelectorMemberList, buildNodeSelectMembers, uniqueNames } from './helpers/groupBuilder.js';
 import { normalizeGroupName } from './helpers/groupNameUtils.js';
 
+// 自定义地区顺序
+const SPECIAL_COUNTRIES = [
+  'Hong Kong',
+  'Taiwan',
+  'Singapore',
+  'United States',
+  'Japan'
+];
+
 export class SingboxConfigBuilder extends BaseConfigBuilder {
     constructor(inputString, selectedRules, customRules, baseConfig, lang, userAgent, groupByCountry = false, enableClashUI = false, externalController, externalUiDownloadUrl, singboxVersion = '1.12', includeAutoSelect = true) {
         const resolvedBaseConfig = baseConfig ?? SING_BOX_CONFIG;
@@ -265,7 +274,16 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
             }
         }
 
-        const countries = Object.keys(countryGroups).sort((a, b) => a.localeCompare(b));
+        // const countries = Object.keys(countryGroups).sort((a, b) => a.localeCompare(b));
+        // 使用自定义顺序排序（没在列表里的国家自动排在最后并按字母排序）
+        const countries = Object.keys(countryGroups).sort((a, b) => {
+            const indexA = COUNTRY_ORDER.indexOf(a);
+            const indexB = COUNTRY_ORDER.indexOf(b);
+            if (indexA === -1 && indexB === -1) return a.localeCompare(b); // 都没在列表 → 字母排序
+            if (indexA === -1) return 1;   // a 不在列表 → 放后面
+            if (indexB === -1) return -1;  // b 不在列表 → 放后面
+            return indexA - indexB;        // 都在列表 → 按你定义的顺序
+        });
         const countryGroupNames = [];
 
         countries.forEach(country => {
@@ -473,7 +491,7 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
             { clash_mode: 'direct', outbound: 'DIRECT' },
             { clash_mode: 'global', outbound: this.t('outboundNames.Node Select') },
             { action: 'sniff' },
-            { protocol: 'dns', action: 'hijack-dns' }
+			{ type: "logical", mode: "or", rules: [{"protocol": "dns"}, {"port": 53}], action: "hijack-dns" }
         );
 
         this.config.route.auto_detect_interface = true;

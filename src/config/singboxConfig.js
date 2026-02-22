@@ -93,22 +93,6 @@ export const SING_BOX_CONFIG = {
 		"rule_set": [],
 		rules: [
 			{
-				action: "sniff"
-			},
-			{
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "protocol": "dns"
-          },
-          {
-            "port": 53
-          }
-        ],
-        "action": "hijack-dns"
-      },
-			{
         "ip_is_private": true,
         "outbound": "direct"
       },
