@@ -1,4 +1,3 @@
-
 import { SING_BOX_CONFIG, generateRuleSets, generateRules, getOutbounds, PREDEFINED_RULE_SETS, DIRECT_DEFAULT_RULES } from '../config/index.js';
 import { BaseConfigBuilder } from './BaseConfigBuilder.js';
 import { deepCopy, groupProxiesByCountry } from '../utils.js';
@@ -8,12 +7,14 @@ import { normalizeGroupName } from './helpers/groupNameUtils.js';
 
 // 自定义地区顺序
 const SPECIAL_COUNTRIES = [
-  'Hong Kong',
-  'Taiwan',
-  'Singapore',
-  'United States',
-  'Japan'
+  'Hong Kong',      // 香港
+  'Taiwan',         // 台湾
+  'Singapore',      // 新加坡
+  'United States',  // 美国
+  'Japan'           // 日本
 ];
+
+const OTHERS_GROUP_NAME = '🌍 Others';   // 可改成 '🌍 其他国家'
 
 export class SingboxConfigBuilder extends BaseConfigBuilder {
     constructor(inputString, selectedRules, customRules, baseConfig, lang, userAgent, groupByCountry = false, enableClashUI = false, externalController, externalUiDownloadUrl, singboxVersion = '1.12', includeAutoSelect = true) {
@@ -251,7 +252,99 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
             outbounds: selectorMembers
         });
     }
+    
+    addCountryGroups() {
+        const proxies = this.getProxies();
+        const countryGroups = groupProxiesByCountry(proxies, {
+            getName: proxy => this.getProxyName(proxy)
+        });
 
+        const existingTags = new Set((this.config.outbounds || []).map(o => normalizeGroupName(o?.tag)).filter(Boolean));
+
+        // 手动分组
+        const manualProxyNames = proxies.map(p => p?.tag).filter(Boolean);
+        const manualGroupName = manualProxyNames.length > 0 ? this.t('outboundNames.Manual Switch') : null;
+        if (manualGroupName) {
+            const manualNorm = normalizeGroupName(manualGroupName);
+            if (!existingTags.has(manualNorm)) {
+                this.config.outbounds.push({
+                    type: 'selector',
+                    tag: manualGroupName,
+                    outbounds: manualProxyNames
+                });
+                existingTags.add(manualNorm);
+            }
+        }
+
+        // 分离特殊国家和其他国家
+        const specialGroups = {};
+        const othersProxies = [];
+
+        Object.keys(countryGroups).forEach(country => {
+            const info = countryGroups[country];
+            if (SPECIAL_COUNTRIES.includes(country)) {
+                specialGroups[country] = info;
+            } else if (info?.proxies?.length > 0) {
+                othersProxies.push(...info.proxies);
+            }
+        });
+
+        const countryGroupNames = [];
+
+        // 1. 按顺序添加 5 个特殊国家
+        SPECIAL_COUNTRIES.forEach(country => {
+            if (specialGroups[country]) {
+                const { emoji, name, proxies: countryProxies } = specialGroups[country];
+                if (countryProxies && countryProxies.length > 0) {
+                    const groupName = `${emoji} ${name}`;
+                    const norm = normalizeGroupName(groupName);
+                    if (!existingTags.has(norm)) {
+                        this.config.outbounds.push({
+                            tag: groupName,
+                            type: 'urltest',
+                            outbounds: countryProxies
+                        });
+                        existingTags.add(norm);
+                    }
+                    countryGroupNames.push(groupName);
+                }
+            }
+        });
+
+        // 2. 添加 Others 分组
+        if (othersProxies.length > 0) {
+            const othersNorm = normalizeGroupName(OTHERS_GROUP_NAME);
+            if (!existingTags.has(othersNorm)) {
+                this.config.outbounds.push({
+                    tag: OTHERS_GROUP_NAME,
+                    type: 'urltest',
+                    outbounds: othersProxies
+                });
+                existingTags.add(othersNorm);
+            }
+            countryGroupNames.push(OTHERS_GROUP_NAME);
+        }
+
+        // 3. 重新构建 Node Select
+        const nodeSelectTag = this.t('outboundNames.Node Select');
+        const nodeSelectGroup = this.config.outbounds.find(o => normalizeGroupName(o?.tag) === normalizeGroupName(nodeSelectTag));
+        if (nodeSelectGroup && Array.isArray(nodeSelectGroup.outbounds)) {
+            const rebuilt = buildNodeSelectMembers({
+                proxyList: [],
+                translator: this.t,
+                groupByCountry: true,
+                manualGroupName,
+                countryGroupNames,
+                includeAutoSelect: this.includeAutoSelect
+            });
+            nodeSelectGroup.outbounds = rebuilt;
+        }
+
+        this.countryGroupNames = countryGroupNames;
+        this.manualGroupName = manualGroupName;
+    }
+
+    /*
     addCountryGroups() {
         const proxies = this.getProxies();
         const countryGroups = groupProxiesByCountry(proxies, {
@@ -273,17 +366,9 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
                 existingTags.add(manualNorm);
             }
         }
+        
 
-        // const countries = Object.keys(countryGroups).sort((a, b) => a.localeCompare(b));
-        // 使用自定义顺序排序（没在列表里的国家自动排在最后并按字母排序）
-        const countries = Object.keys(countryGroups).sort((a, b) => {
-            const indexA = COUNTRY_ORDER.indexOf(a);
-            const indexB = COUNTRY_ORDER.indexOf(b);
-            if (indexA === -1 && indexB === -1) return a.localeCompare(b); // 都没在列表 → 字母排序
-            if (indexA === -1) return 1;   // a 不在列表 → 放后面
-            if (indexB === -1) return -1;  // b 不在列表 → 放后面
-            return indexA - indexB;        // 都在列表 → 按你定义的顺序
-        });
+        const countries = Object.keys(countryGroups).sort((a, b) => a.localeCompare(b));
         const countryGroupNames = [];
 
         countries.forEach(country => {
@@ -321,6 +406,7 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
         this.countryGroupNames = countryGroupNames;
         this.manualGroupName = manualGroupName;
     }
+    */
 
     /**
      * Merge user-defined proxy groups (selector/urltest outbounds) with system-generated ones
